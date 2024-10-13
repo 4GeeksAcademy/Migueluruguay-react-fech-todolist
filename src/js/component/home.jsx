@@ -6,73 +6,69 @@ const Home = () => {
     const [user, setUser] = useState(null);
     const [message, setMessage] = useState(""); // Mensaje para accesibilidad
 
-    // URL base de la API
-    const API_URL = 'https://playground.4geeks.com/todo/todos/user';
+    // URL base de la API (corregida)
+    const API_URL = 'https://playground.4geeks.com/todo';
 
-    // useEffect para verificar si hay un usuario
+    // useEffect para verificar si hay un usuario y cargarlo
     useEffect(() => {
-        fetch(API_URL + "/user")
-            .then((resp) => {
-                if (resp.status === 404) {
-                    setMessage("No se encontraron usuarios. Por favor, crea uno.");
-                    createUser();
-                } else {
-                    return resp.json();
-                }
-            })
-            .then((data) => {
-                if (data) {
-                    setUser(data);
-                    fetchTasks();  // Obtén las tareas después de cargar el usuario
-                }
-            })
-            .catch((error) => setMessage("Error al cargar el usuario"));
+        const username = prompt("Por favor, introduce tu nombre de usuario:");
+        if (username) {
+            fetch(`${API_URL}/users/${username}`)
+                .then((resp) => {
+                    if (resp.status === 404) {
+                        setMessage("No se encontró el usuario. Creando uno nuevo...");
+                        createUser(username); // Si no hay usuario, se crea uno nuevo
+                    } else {
+                        return resp.json();
+                    }
+                })
+                .then((data) => {
+                    if (data) {
+                        setUser(data); // Guardamos el usuario
+                        fetchTasks(data.name); // Cargar las tareas del usuario
+                    }
+                })
+                .catch((error) => setMessage("Error al cargar el usuario"));
+        }
     }, []);
 
     // Función para crear un nuevo usuario si no existe
-    const createUser = () => {
-        const username = prompt("Por favor, introduce un nombre de usuario:");
-        if (username) {
-            fetch(API_URL + "/user", {
-                method: "POST",
-                body: JSON.stringify({ username: username }),
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            })
-            .then((resp) => {
-                if (resp.ok) {
-                    setMessage("Usuario creado con éxito");
-                    return resp.json();
-                }
-            })
+    const createUser = (username) => {
+        fetch(`${API_URL}/users/${username}`, {
+            method: "POST",
+            body: JSON.stringify({ username: username }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
+        .then((resp) => {
+            if (resp.ok) {
+                setMessage("Usuario creado con éxito");
+                return resp.json();
+            }
+        })
+        .then((data) => {
+            if (data) {
+                setUser(data); // Guardar el usuario recién creado
+            }
+        })
+        .catch((error) => setMessage("Error al crear el usuario"));
+    };
+
+    // Función para obtener las tareas del usuario
+    const fetchTasks = (username) => {
+        fetch(`${API_URL}/todos/${username}`)
+            .then((resp) => resp.json())
             .then((data) => {
-                if (data) {
-                    setUser(data); // Guarda el usuario recién creado
-                }
+                setTasks(data); // Guardar las tareas en el estado
             })
-            .catch((error) => setMessage("Error al crear el usuario"));
-        }
+            .catch((error) => setMessage("Error al cargar las tareas"));
     };
 
-    // Función para obtener las tareas
-    const fetchTasks = () => {
-        if (user) {
-            fetch(`${API_URL}/${user.username}/tasks`)
-                .then((resp) => resp.json())
-                .then((data) => {
-                    setTasks(data);
-                })
-                .catch((error) => setMessage("Error al cargar las tareas"));
-        } else {
-            setMessage("No hay un usuario disponible para cargar las tareas.");
-        }
-    };
-
-    // Función para actualizar las tareas en la API
+    // Función para actualizar las tareas en el servidor
     const updateTasksOnServer = (newTasks) => {
         if (user) {
-            fetch(`${API_URL}/${user.username}/tasks`, {
+            fetch(`${API_URL}/todos/${user.name}`, {
                 method: "PUT",
                 body: JSON.stringify(newTasks),
                 headers: {
@@ -96,8 +92,8 @@ const Home = () => {
         if (e.key === "Enter" && newTask.trim() !== "" && user) {
             const updatedTasks = [...tasks, { label: newTask, done: false }];
             setTasks(updatedTasks);
-            updateTasksOnServer(updatedTasks);
-            setNewTask("");
+            updateTasksOnServer(updatedTasks); // Actualizar las tareas en el servidor
+            setNewTask(""); // Limpiar el input
         } else if (!user) {
             setMessage("No hay un usuario disponible. No se puede agregar la tarea.");
         }
@@ -108,7 +104,7 @@ const Home = () => {
         if (user) {
             const updatedTasks = tasks.filter((_, i) => i !== index);
             setTasks(updatedTasks);
-            updateTasksOnServer(updatedTasks);
+            updateTasksOnServer(updatedTasks); // Actualizar tareas tras eliminar una
         } else {
             setMessage("No hay un usuario disponible. No se puede eliminar la tarea.");
         }
@@ -118,7 +114,7 @@ const Home = () => {
     const clearTasks = () => {
         if (user) {
             setTasks([]);
-            updateTasksOnServer([]);
+            updateTasksOnServer([]); // Limpiar todas las tareas en el servidor
         } else {
             setMessage("No hay un usuario disponible. No se pueden limpiar las tareas.");
         }
