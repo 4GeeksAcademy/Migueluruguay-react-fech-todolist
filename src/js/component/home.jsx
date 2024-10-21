@@ -6,7 +6,7 @@ const Home = () => {
     const [user, setUser] = useState(null);
     const [message, setMessage] = useState(""); // Mensaje para accesibilidad
 
-    // URL base de la API (corregida)
+    // URL base de la API
     const API_URL = 'https://playground.4geeks.com/todo';
 
     // useEffect para verificar si hay un usuario y cargarlo
@@ -36,7 +36,7 @@ const Home = () => {
     const createUser = (username) => {
         fetch(`${API_URL}/users/${username}`, {
             method: "POST",
-            body: JSON.stringify({ username: username }),
+            body: JSON.stringify({ name: username }),
             headers: {
                 "Content-Type": "application/json",
             },
@@ -57,20 +57,37 @@ const Home = () => {
 
     // Función para obtener las tareas del usuario
     const fetchTasks = (username) => {
-        fetch(`${API_URL}/todos/${username}`)
+        fetch(`${API_URL}/users/${username}`)
             .then((resp) => resp.json())
             .then((data) => {
-                setTasks(data); // Guardar las tareas en el estado
+                if (data && data.todos) {
+                    setTasks(data.todos); // Guardar las tareas en el estado
+                }
             })
             .catch((error) => setMessage("Error al cargar las tareas"));
     };
 
+    // Función para agregar una nueva tarea
+    const addTask = (e) => {
+        if (e.key === "Enter" && newTask.trim() !== "" && user) {
+            const newTaskData = { label: newTask, is_done: false };
+            setTasks([...tasks, newTaskData]); // Actualizar la lista de tareas localmente
+            updateTasksOnServer([...tasks, newTaskData]); // Actualizar las tareas en el servidor
+            setNewTask(""); // Limpiar el input
+        } else if (!user) {
+            setMessage("No hay un usuario disponible. No se puede agregar la tarea.");
+        }
+    };
+
     // Función para actualizar las tareas en el servidor
-    const updateTasksOnServer = (newTasks) => {
+    const updateTasksOnServer = (updatedTasks) => {
         if (user) {
             fetch(`${API_URL}/todos/${user.name}`, {
-                method: "PUT",
-                body: JSON.stringify(newTasks),
+                method: "POST",
+                body: JSON.stringify(updatedTasks.map(task => ({
+                    label: task.label,
+                    is_done: task.is_done || false
+                }))),
                 headers: {
                     "Content-Type": "application/json",
                 },
@@ -87,24 +104,14 @@ const Home = () => {
         }
     };
 
-    // Función para agregar una nueva tarea
-    const addTask = (e) => {
-        if (e.key === "Enter" && newTask.trim() !== "" && user) {
-            const updatedTasks = [...tasks, { label: newTask, done: false }];
-            setTasks(updatedTasks);
-            updateTasksOnServer(updatedTasks); // Actualizar las tareas en el servidor
-            setNewTask(""); // Limpiar el input
-        } else if (!user) {
-            setMessage("No hay un usuario disponible. No se puede agregar la tarea.");
-        }
-    };
-
     // Función para eliminar una tarea
     const deleteTask = (index) => {
         if (user) {
+            const taskToDelete = tasks[index];
             const updatedTasks = tasks.filter((_, i) => i !== index);
             setTasks(updatedTasks);
             updateTasksOnServer(updatedTasks); // Actualizar tareas tras eliminar una
+            setMessage(`Tarea '${taskToDelete.label}' eliminada con éxito.`);
         } else {
             setMessage("No hay un usuario disponible. No se puede eliminar la tarea.");
         }
@@ -115,6 +122,7 @@ const Home = () => {
         if (user) {
             setTasks([]);
             updateTasksOnServer([]); // Limpiar todas las tareas en el servidor
+            setMessage("Todas las tareas han sido eliminadas.");
         } else {
             setMessage("No hay un usuario disponible. No se pueden limpiar las tareas.");
         }
@@ -130,7 +138,7 @@ const Home = () => {
             {!user && <p>Por favor, crea un usuario para gestionar las tareas.</p>}
             <input
                 type="text"
-                placeholder="¿Qué necesita ser hecho?"
+                placeholder="¿Qué hay que hacer?"
                 className="form-control"
                 value={newTask}
                 onChange={(e) => setNewTask(e.target.value)}
