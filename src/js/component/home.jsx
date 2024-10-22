@@ -72,7 +72,7 @@ const Home = () => {
         if (e.key === "Enter" && newTask.trim() !== "" && user) {
             const newTaskData = { label: newTask, is_done: false };
             setTasks([...tasks, newTaskData]); // Actualizar la lista de tareas localmente
-            updateTasksOnServer([...tasks, newTaskData]); // Actualizar las tareas en el servidor
+            updateTasksOnServer({label:newTask, is_done: false}); // Actualizar las tareas en el servidor
             setNewTask(""); // Limpiar el input
         } else if (!user) {
             setMessage("No hay un usuario disponible. No se puede agregar la tarea.");
@@ -80,14 +80,11 @@ const Home = () => {
     };
 
     // Función para actualizar las tareas en el servidor
-    const updateTasksOnServer = (updatedTasks) => {
+    const updateTasksOnServer = (task) => {
         if (user) {
             fetch(`${API_URL}/todos/${user.name}`, {
                 method: "POST",
-                body: JSON.stringify(updatedTasks.map(task => ({
-                    label: task.label,
-                    is_done: task.is_done || false
-                }))),
+                body: JSON.stringify(task),
                 headers: {
                     "Content-Type": "application/json",
                 },
