@@ -55,6 +55,7 @@ const Home = () => {
     };
 
     // Función para obtener las tareas del usuario
+
     const fetchTasks = (username) => {
         fetch(`${API_URL}/users/${username}`)
             .then((resp) => resp.json())
@@ -91,6 +92,7 @@ const Home = () => {
             .then((resp) => {
                 if (resp.ok) {
                     setMessage("Tareas actualizadas con éxito");
+                    fetchTasks(user.name);
                 }
                 return resp.json();
             })
@@ -108,6 +110,7 @@ const Home = () => {
                 headers:{"Content-Type":"application/json"}
             }).then((resp)=>{
                 if(resp.status==204){
+                    setMessage("tarea eliminada con éxito");
                 fetchTasks(user.name)   
                 }
             })
