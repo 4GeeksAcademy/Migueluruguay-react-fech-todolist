@@ -31,7 +31,6 @@ const Home = () => {
                 .catch((error) => setMessage("Error al cargar el usuario"));
         }
     }, []);
-
     // Función para crear un nuevo usuario si no existe
     const createUser = (username) => {
         fetch(`${API_URL}/users/${username}`, {
@@ -102,13 +101,16 @@ const Home = () => {
     };
 
     // Función para eliminar una tarea
-    const deleteTask = (index) => {
+    const deleteTask = (id) => {
         if (user) {
-            const taskToDelete = tasks[index];
-            const updatedTasks = tasks.filter((_, i) => i !== index);
-            setTasks(updatedTasks);
-            updateTasksOnServer(updatedTasks); // Actualizar tareas tras eliminar una
-            setMessage(`Tarea '${taskToDelete.label}' eliminada con éxito.`);
+            fetch(`${API_URL}/todos/${id}`, {
+                method:"DELETE", 
+                headers:{"Content-Type":"application/json"}
+            }).then((resp)=>{
+                if(resp.status==204){
+                fetchTasks(user.name)   
+                }
+            })
         } else {
             setMessage("No hay un usuario disponible. No se puede eliminar la tarea.");
         }
@@ -157,7 +159,7 @@ const Home = () => {
                             {task.label}
                             <button
                                 className="btn btn-danger btn-sm"
-                                onClick={() => deleteTask(index)}
+                                onClick={() => deleteTask(task.id)}
                                 aria-label={`Eliminar tarea: ${task.label}`}
                             >
                                 X
