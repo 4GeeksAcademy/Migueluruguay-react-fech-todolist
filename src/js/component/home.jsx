@@ -119,17 +119,7 @@ const Home = () => {
         }
     };
 
-    // Función para limpiar todas las tareas
-    const clearTasks = () => {
-        if (user) {
-            setTasks([]);
-            updateTasksOnServer([]); // Limpiar todas las tareas en el servidor
-            setMessage("Todas las tareas han sido eliminadas.");
-        } else {
-            setMessage("No hay un usuario disponible. No se pueden limpiar las tareas.");
-        }
-    };
-
+    
     return (
         <div className="text-center mt-5">
             <h1 className="mb-4">Lista de Tareas</h1>
@@ -171,10 +161,8 @@ const Home = () => {
                     ))
                 )}
             </ul>
-            <p className="mt-3">{tasks.length} tarea{tasks.length !== 1 ? "s" : ""} pendiente{tasks.length !== 1 ? "s" : ""}</p>
-            <button className="btn btn-danger mt-3" onClick={clearTasks} aria-label="Limpiar todas las tareas">
-                Limpiar todas las tareas
-            </button>
+            
+
         </div>
     );
 };
